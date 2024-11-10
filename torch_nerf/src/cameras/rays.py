@@ -77,7 +77,15 @@ class RaySamples:
             coords: Coordinates of points sampled along rays in the ray bundle.
         """
         # TODO
-        raise NotImplementedError("Task 2")
+        # Extract ray origins and directions from ray bundle
+        origins = self.ray_bundle.origins  # Shape: (num_ray, 3)
+        directions = self.ray_bundle.directions  # Shape: (num_ray, 3)
+        t_samples = self.t_samples  # Shape: (num_ray, num_sample)
+
+        # Compute the coordinates of points along each ray using broadcasting
+        coords = origins.unsqueeze(1) + t_samples.unsqueeze(-1) * directions.unsqueeze(1)
+
+        return coords
 
     @jaxtyped
     @typechecked
