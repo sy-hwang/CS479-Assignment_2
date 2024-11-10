@@ -71,14 +71,17 @@ class StratifiedSampler(RaySamplerBase):
 
         # Generate random stratified samples within each bin
         # Example shape of random numbers: (num_sample,)
+        num_rays = ray_bundle.origins.shape[0]
         interval_length = 1.0 / num_sample
-        stratified_samples = t_bins[:-1] + interval_length * torch.rand(num_sample, device=device)
+        stratified_samples = t_bins[:-1] + interval_length * torch.rand((num_rays, num_sample), device=device)
+
 
         # Convert samples from [0, 1] to [near, far] range
-        near = ray_bundle.nears.squeeze(-1)  # Shape: (num_ray,)
-        far = ray_bundle.fars.squeeze(-1)    # Shape: (num_ray,)
+        near = float(ray_bundle.nears[0].item())
+        far = float(ray_bundle.fars[0].item())
         t_samples = self.map_t_to_euclidean(stratified_samples, near, far)
 
+        # Ensure t_samples has the correct shape before returning
         return t_samples
 
     @jaxtyped
