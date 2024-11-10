@@ -35,7 +35,42 @@ class NeRF(nn.Module):
         super().__init__()
 
         # TODO
-        raise NotImplementedError("Task 1")
+        self.input_layer = nn.Sequential(
+            nn.Linear(pos_dim, feat_dim),
+            nn.ReLU()
+        )
+
+        # 4 hidden layers
+        self.hidden_layers1 = nn.Sequential(*[
+            nn.Sequential(nn.Linear(feat_dim, feat_dim), nn.ReLU())
+            for _ in range(4)
+        ])
+
+        # skip layer
+        self.skip_layer = nn.Sequential(
+            nn.Linear(pos_dim + feat_dim, feat_dim),
+            nn.ReLU()
+        )
+
+        #hidden layers
+        self.hidden_layers2 = nn.Sequential(*[
+            nn.Sequential(nn.Linear(feat_dim, feat_dim), nn.ReLU())
+            for _ in range(4)
+        ])
+
+        # density layer (feat_dim -> 1)
+        self.density_layer = nn.Sequential(
+            nn.Linear(feat_dim, 1),
+            nn.ReLU()
+        )
+
+        # radiance layer
+        self.rgb_layer = nn.Sequential(
+            nn.Linear(view_dir_dim + feat_dim, feat_dim // 2),
+            nn.ReLU(),
+            nn.Linear(feat_dim // 2, 3),
+            nn.Sigmoid()
+        )
 
     @jaxtyped
     @typechecked
@@ -60,4 +95,16 @@ class NeRF(nn.Module):
         """
 
         # TODO
-        raise NotImplementedError("Task 1")
+        x = self.input_layer(pos)
+        x = self.hidden_layers1(x)
+
+        x = torch.cat([x, pos], dim=-1)
+        x = self.skip_layer(x)
+        x = self.hidden_layers2(x)
+
+        sigma = self.density_layer(x)
+
+        view_input = torch.cat([x, view_dir], dim=-1)
+        radiance = self.rgb_layer(view_input)
+
+        return sigma, radiance
